@@ -1,7 +1,7 @@
 import { Component } from 'react';
 import css from './App.module.css';
 import { getImagesFromPixabayAPI } from 'functions/pixabayAPI';
-import { Searchbar } from './Searchbar/Searchbar';
+import Searchbar from './Searchbar/Searchbar';
 import ImageGallery from './ImageGallery/ImageGallery';
 import Button from 'components/Button/Button';
 import Loader from 'components/Loader/Loader';
