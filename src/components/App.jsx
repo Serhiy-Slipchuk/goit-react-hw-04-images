@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import css from './App.module.css';
 import { getImagesFromPixabayAPI } from 'functions/pixabayAPI';
 import Searchbar from './Searchbar/Searchbar';
@@ -6,24 +6,19 @@ import ImageGallery from './ImageGallery/ImageGallery';
 import Button from 'components/Button/Button';
 import Loader from 'components/Loader/Loader';
 
-export class App extends Component {
-  state = {
-    searchQuerry: '',
-    items: [],
-    total: 0,
-    pageNumber: 1,
-    isLoading: false,
-    isLoadMoreShown: false,
-  };
-  async componentDidUpdate(prevProps, prevState) {
-    const { searchQuerry, pageNumber } = this.state;
+const App = function () {
+  const [searchQuerry, setSearchQuerry] = useState('');
+  const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadMoreShown, setIsLoadMoreShown] = useState(false);
 
-    if (
-      prevState.searchQuerry !== searchQuerry ||
-      prevState.pageNumber !== pageNumber
-    ) {
+  useEffect(() => {
+    const loadImages = async function () {
       try {
-        this.setState({ isLoading: true, isLoadMoreShown: false });
+        setIsLoading(true);
+        setIsLoadMoreShown(false);
 
         const response = await getImagesFromPixabayAPI(
           searchQuerry,
@@ -31,10 +26,8 @@ export class App extends Component {
         );
         const { hits, total } = response.data;
         if (hits.length !== 0) {
-          this.setState(prevState => ({
-            items: [...prevState.items, ...hits],
-            total: total,
-          }));
+          setItems(prevState => [...prevState, ...hits]);
+          setTotal(total);
         } else {
           window.alert(
             `There is no any result on ${searchQuerry} Please, enter valid search querry`
@@ -42,48 +35,48 @@ export class App extends Component {
           return;
         }
         if (hits.length >= 12) {
-          this.setState({ isLoadMoreShown: true });
+          setIsLoadMoreShown(true);
         }
       } catch {
         window.alert(
           `There is no connetion to server. Check your internet connection or try later`
         );
       } finally {
-        this.setState({ isLoading: false });
+        setIsLoading(false);
       }
-    }
-  }
+    };
 
-  updateSearchQuerry = newSearchQuerry => {
-    if (this.state.searchQuerry !== newSearchQuerry) {
-      this.setState({
-        searchQuerry: newSearchQuerry,
-        pageNumber: 1,
-        items: [],
-        total: 0,
-      });
+    if (searchQuerry !== '') {
+      loadImages();
+    }
+  }, [searchQuerry, pageNumber]);
+
+  const updateSearchQuerry = newSearchQuerry => {
+    if (searchQuerry !== newSearchQuerry) {
+      setSearchQuerry(newSearchQuerry);
+      setPageNumber(1);
+      setItems([]);
+      setTotal(0);
     }
   };
 
-  handlerLoadMoreButton = () => {
-    const { pageNumber, total } = this.state;
-    this.setState(prevState => ({ pageNumber: prevState.pageNumber + 1 }));
+  const handlerLoadMoreButton = () => {
+    setPageNumber(prevState => prevState + 1);
     if (pageNumber >= total / 12 - 1) {
-      this.setState({ isLoadMoreShown: false });
+      setIsLoadMoreShown(false);
     }
   };
 
-  render() {
-    const { items, isLoading, isLoadMoreShown } = this.state;
-    return (
-      <div className={css.app}>
-        <Searchbar onSubmit={this.updateSearchQuerry} />
-        {items.length > 0 && <ImageGallery items={items} />}
-        {isLoading && <Loader />}
-        {isLoadMoreShown && (
-          <Button text="Load more" onClick={this.handlerLoadMoreButton} />
-        )}
-      </div>
-    );
-  }
-}
+  return (
+    <div className={css.app}>
+      <Searchbar onSubmit={updateSearchQuerry} />
+      {items.length > 0 && <ImageGallery items={items} />}
+      {isLoading && <Loader />}
+      {isLoadMoreShown && (
+        <Button text="Load more" onClick={handlerLoadMoreButton} />
+      )}
+    </div>
+  );
+};
+
+export default App;
